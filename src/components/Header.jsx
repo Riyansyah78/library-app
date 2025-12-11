@@ -38,7 +38,7 @@ export default function Header() {
               </svg>
             </div>
             <span className="text-xl font-bold text-gray-800 group-hover:text-teal-700 transition">
-              PustakaConnect
+              Pustaka Connect
             </span>
           </Link>
 
