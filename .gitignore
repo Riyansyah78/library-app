@@ -1,4 +1,288 @@
+# Environment variables
+.env
+.env.local
+.env.*.local
+.env.production
+
+# Dependencies
 node_modules/
+npm-debug.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Build files
 dist/
-/.env
+dist-ssr/
+*.local
+*.build
+
+# Editor directories and files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# OS files
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# IDE files
+.vscode/
+.vscode/settings.json
+.vscode/extensions.json
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# IntelliJ IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iml
+
+# VS Code
+.vscode/
+launch.json
+settings.json
+*.code-workspace
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# WebStorm
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Atom
+.atom/
+.atomrc
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+*.iws
+
+# Logs
+logs
 *.log
+log/
+
+# Runtime data
+pids/
+*.pid
+*.seed
+*.pid.lock
+
+# Temp files
+tmp/
+temp/
+*.tmp
+*.bak
+*.swp
+*~
+
+# Mac
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+desktop.ini
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+.directory
+.Trash-*
+
+# TypeScript
+*.tsbuildinfo
+
+# Optional npm cache directory
+.npm
+.eslintcache
+.stylelintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv environment variables file
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# parcel-related files
+dist/
+.parcel-cache/
+.cache/
+
+# Vite
+vite.config.js.timestamp-*
+
+# misc
+*.pem
+.cache/
+
+# Local Netlify folder
+.netlify
+
+# vercel
+.vercel
+
+# turbo
+.turbo
+
+# Yarn
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# pnpm
+.pnpm-debug.log
+
+# Environment file examples (but not the actual files)
+!.env.example
+!.env.local.example
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
+*.sql
+
+# Backup files
+*.backup
+*.bak
+*.orig
+
+# Coverage reports
+coverage/
+.coverage
+.nyc_output/
+htmlcov/
+
+# Unit test / coverage reports
+.jest/
+junit.xml
+
+# Package lock files (optional - uncomment if you want to commit these)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Testing
+.mocha
+test-results/
+
+# API Keys and secrets (double check!)
+.env.local
+.env.production.local
+secrets/
+*.key
+*.pem
+!public/*.pem
+
+# Compiled output
+**/*.js.map
+**/*.css.map
+
+# Firebase
+.firebase/
+.firebaserc
+
+# Supabase (local)
+supabase/.branches/
+supabase/.temp/
+
+# Development server
+.vite/
+
+# Plugin development
+.plugin
+
+# Temporary development files
+*.dev.js
+*.dev.css
+
+# Git
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# Project-specific
+*.config.local.js
+.env.test
+test-results/
+
+# Editor backups
+*.orig
+*~
+
+# System files
+.DS_Store
+Thumbs.db
+
+# Lock files (choose one approach)
+# Option 1: Commit lock files (recommended for production apps)
+# package-lock.json (committed)
+# yarn.lock (committed)
+
+# Option 2: Don't commit lock files (uncomment below)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml
+
+# Archive files
+*.zip
+*.tar
+*.tar.gz
+*.rar
+*.7z
+
+# Video/Audio (if you store large media)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.mp3
+*.wav
+
+# Archives
+*.zip
+*.tar.gz
+
+# Misc development
+.env.test
+.env.testing
