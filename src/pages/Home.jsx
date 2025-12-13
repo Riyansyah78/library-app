@@ -68,6 +68,23 @@ const categories = [
     }
   }
 
+  function handleCheckShelf() {
+    if (user) {
+      // Jika sudah login, langsung ke halaman MyShelf
+      navigate('/myshelf')
+    } else {
+      // Jika belum login, tampilkan Popup konfirmasi
+      setPopup({
+        isOpen: true,
+        type: 'confirm',
+        title: 'Login Diperlukan',
+        message: 'Silakan masuk atau daftar untuk melihat status peminjaman dan rak buku Anda.',
+        confirmText: 'Masuk / Daftar', // Custom text tombol konfirmasi
+        onConfirm: () => navigate('/auth')
+      })
+    }
+  }
+
   async function handleBorrow(book){
     if(!user){
       setPopup({
@@ -160,7 +177,7 @@ const categories = [
         <div className="px-4 sm:px-6 lg:px-8 my-6">
             <div 
               className="bg-teal-700 rounded-xl p-4 text-white flex justify-between items-center shadow-lg cursor-pointer"
-              onClick={() => navigate('/myshelf')}
+              onClick={handleCheckShelf}
             >
                 <div>
                     <p className="text-sm opacity-80 mb-1">Status Peminjaman</p>
