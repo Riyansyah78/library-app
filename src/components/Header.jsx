@@ -16,7 +16,7 @@ export default function Header() {
     try {
       await supabase.auth.signOut()
       setShowLogoutConfirm(false)
-      navigate('/auth')
+      navigate('/')
     } catch (error) {
       console.error('Error signing out:', error)
     }

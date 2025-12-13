@@ -34,7 +34,7 @@ export default function BottomNav() {
     try {
       await supabase.auth.signOut()
       setShowLogoutConfirm(false)
-      navigate('/auth')
+      navigate('/')
     } catch (error) {
       console.error('Error signing out:', error)
     }
