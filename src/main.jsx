@@ -12,6 +12,7 @@ import UserManagement from './pages/UserManagement'
 import MyShelf from './pages/MyShelf'      
 import ExplorePage from './pages/ExplorePage'
 import Notifications from './pages/Notifications'
+import EmailConfirmed from './pages/EmailConfirmed'
 
 // Components & Utils
 import './index.css'
@@ -61,6 +62,7 @@ function App() {
           <Routes>
             {/* Route TANPA Layout (Misal: Login Page) */}
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/auth/confirmed" element={<EmailConfirmed />} />
 
             {/* Route DENGAN Layout (Header & Bottom Nav) */}
             <Route element={<Layout />}>

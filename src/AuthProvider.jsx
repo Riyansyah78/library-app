@@ -15,6 +15,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [loading, setLoading] = useState(true)
   const [notificationCount, setNotificationCount] = useState(0)
+  const [isAdmin, setIsAdmin] = useState(false)
 
   useEffect(() => {
     const { data: authListener } = supabase.auth.onAuthStateChange(
@@ -23,11 +24,13 @@ export function AuthProvider({ children }) {
         const currentUser = session?.user || null
         setUser(currentUser)
         
-        // Update notifikasi saat auth berubah
+        // Update notifikasi dan admin status saat auth berubah
         if (currentUser) {
           updateNotificationCount(currentUser.id)
+          checkAdminStatus(currentUser.id)
         } else {
           setNotificationCount(0)
+          setIsAdmin(false)
         }
         
         setLoading(false)
@@ -39,6 +42,7 @@ export function AuthProvider({ children }) {
       setUser(currentUser)
       if (currentUser) {
         updateNotificationCount(currentUser.id)
+        checkAdminStatus(currentUser.id)
       }
       setLoading(false)
     })
@@ -49,6 +53,26 @@ export function AuthProvider({ children }) {
       }
     }
   }, [])
+
+  const checkAdminStatus = async (userId) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('is_admin')
+        .eq('id', userId)
+        .single()
+      
+      if (error) {
+        console.error('Error checking admin status:', error)
+        setIsAdmin(false)
+        return
+      }
+      setIsAdmin(data?.is_admin || false)
+    } catch (err) {
+      console.error('checkAdminStatus error:', err)
+      setIsAdmin(false)
+    }
+  }
 
   const updateNotificationCount = async (userId) => {
     try {
@@ -168,10 +192,7 @@ export function AuthProvider({ children }) {
   signout,
   updateProfile,
   resendConfirmation,
-  // Jika tidak ada konfirmasi email, gunakan metode lain untuk admin
-  isAdmin: user?.user_metadata?.is_admin || 
-           user?.email === 'nxttrap@gmail.com' || // Email khusus admin
-           false
+  isAdmin
 }
 
   return (
