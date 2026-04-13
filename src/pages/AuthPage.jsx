@@ -40,7 +40,7 @@ export default function AuthPage(){
           isOpen: true,
           type: 'alert',
           title: 'Berhasil',
-          message: 'Registrasi sukses! Anda sudah dapat masuk.'
+          message: 'Registrasi sukses! Silahkan cek email untuk verifikasi.'
         })
         setMode('signin')
         setName('')

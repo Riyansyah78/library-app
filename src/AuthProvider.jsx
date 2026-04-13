@@ -107,6 +107,8 @@ export function AuthProvider({ children }) {
   const signUp = async (email, password, options = {}) => {
     console.log('Signing up with:', email)
     
+    const redirectUrl = `${window.location.origin}/auth/confirmed`
+    
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -115,7 +117,7 @@ export function AuthProvider({ children }) {
           full_name: options.data?.full_name || '',
           ...options.data
         },
-       
+        emailRedirectTo: redirectUrl
       }
     })
 
