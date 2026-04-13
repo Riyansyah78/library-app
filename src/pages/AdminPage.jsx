@@ -13,11 +13,16 @@ export default function AdminPage(){
     author: '', 
     cover_url: '', 
     category: '',
+    customCategory: '',
     copies: 1, 
     hot_month: '',
     synopsis: '' 
   })
   const [loading, setLoading] = useState(true)
+
+  // State untuk pencarian & filter buku
+  const [searchTerm, setSearchTerm] = useState('')
+  const [filterCategory, setFilterCategory] = useState('')
 
   // State untuk popup
   const [popup, setPopup] = useState({
@@ -57,10 +62,17 @@ export default function AdminPage(){
     // Fix: Set requests to empty array if undefined
     setRequests(requestsData && Array.isArray(requestsData) ? requestsData : []);
 
-    // fetchCategories ini sudah ada di supabaseClient.js Anda
-      const cats = await fetchCategories();
-      // fetchCategories di client Anda mengembalikan array string ['Fiksi', 'Sains']
-      setExistingCategories(cats || []);
+    // Default categories to ensure they always show up
+    const defaultCats = [
+      'Fiksi', 'Sains', 'Sejarah', 'Teknologi', 'Filosofi', 
+      'Biografi', 'Bisnis', 'Pengembangan Diri', 'Misteri', 'Romansa', 'Fantasi', 'Pendidikan'
+    ];
+    // Combine fetched cats with default cats and make unique
+    const cats = await fetchCategories();
+    const fetchedCats = cats || [];
+    const uniqueCats = [...new Set([...defaultCats, ...fetchedCats])].sort();
+    
+    setExistingCategories(uniqueCats);
     
   } catch (err) {
     console.error('Error loading data:', err);
@@ -85,7 +97,10 @@ export default function AdminPage(){
         showPopup('alert', 'Error', 'Penulis tidak boleh kosong')
         return
       }
-      if (!form.category.trim()) { showPopup('alert', 'Error', 'Kategori wajib diisi'); 
+      const finalCategory = (form.category === 'Lainnya' ? form.customCategory : form.category).trim()
+      
+      if (!finalCategory) { 
+        showPopup('alert', 'Error', 'Kategori wajib diisi'); 
         return 
       }
       
@@ -105,7 +120,7 @@ export default function AdminPage(){
       const bookData = {
         title: form.title.trim(),
         author: form.author.trim(),
-        category: form.category.trim(),
+        category: finalCategory,
         cover_url: coverUrl,
         copies: Number(form.copies),
         hot_month: form.hot_month ? Number(form.hot_month) : null,
@@ -133,6 +148,7 @@ export default function AdminPage(){
         author: '', 
         cover_url: '', 
         category: '',
+        customCategory: '',
         copies: 1, 
         hot_month: '',
         synopsis: '',
@@ -156,6 +172,7 @@ export default function AdminPage(){
       author: book.author || '', 
       cover_url: book.cover_url || '', 
       category: book.category || '',
+      customCategory: '',
       copies: book.copies ?? 1, 
       hot_month: book.hot_month ?? '',
       synopsis: book.synopsis || '',
@@ -262,6 +279,14 @@ export default function AdminPage(){
     })
   }
 
+  // Filter buku
+  const filteredBooks = books.filter(b => {
+    const matchSearch = (b.title?.toLowerCase() || '').includes(searchTerm.toLowerCase()) || 
+                        (b.author?.toLowerCase() || '').includes(searchTerm.toLowerCase());
+    const matchCategory = filterCategory ? b.category === filterCategory : true;
+    return matchSearch && matchCategory;
+  })
+
   // Tampilkan loading saat fetch data
   if (loading) {
     return (
@@ -303,24 +328,30 @@ export default function AdminPage(){
             required 
           />
           <div className="mt-2 mb-4">
-            <label className="block text-sm font-medium text-slate-700 mb-1">Kategori</label>
-            <input 
-              list="category-list" 
-              placeholder="Pilih atau ketik kategori baru..." 
-              value={form.category} 
-              onChange={e=>setForm({...form,category:e.target.value})} 
-              className="w-full p-2 border rounded"
-              required 
-            />
-            {/* Datalist ini tidak terlihat, tapi muncul sebagai saran saat mengetik */}
-            <datalist id="category-list">
+            <label className="block text-sm font-medium text-slate-700 mb-1">Kategori *</label>
+            <select
+              value={form.category}
+              onChange={e => setForm({...form, category: e.target.value})}
+              className="w-full p-2 border rounded border-gray-300 bg-white"
+              required
+            >
+              <option value="" disabled>Pilih Kategori</option>
               {existingCategories.map((cat, index) => (
-                <option key={index} value={cat} />
+                <option key={index} value={cat}>{cat}</option>
               ))}
-            </datalist>
-            <p className="text-xs text-gray-500 mt-1">
-              *Ketik manual jika kategori belum ada di daftar.
-            </p>
+              <option value="Lainnya">Lainnya (Ketik Manual)...</option>
+            </select>
+            
+            {form.category === 'Lainnya' && (
+              <input 
+                placeholder="Ketik kategori baru..." 
+                value={form.customCategory || ''} 
+                onChange={e=>setForm({...form, customCategory: e.target.value})} 
+                className="w-full p-2 border rounded mt-2 border-teal-500"
+                autoFocus
+                required 
+              />
+            )}
           </div>
           
           <div className="mt-2">
@@ -383,6 +414,8 @@ export default function AdminPage(){
                     title: '', 
                     author: '', 
                     cover_url: '', 
+                    category: '',
+                    customCategory: '',
                     copies: 1, 
                     hot_month: '', 
                     synopsis: '',
@@ -400,8 +433,46 @@ export default function AdminPage(){
 
       <section style={{ marginTop: '2rem' }}>
         <h2 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '1rem' }}>
-          Daftar Buku ({books.length})
+          Daftar Buku ({filteredBooks.length}{books.length !== filteredBooks.length ? ` dari ${books.length}` : ''})
         </h2>
+
+        {/* --- Area Filter & Cari --- */}
+        <div style={{ 
+          display: 'flex', 
+          gap: '1rem', 
+          marginBottom: '1rem',
+          flexWrap: 'wrap' 
+        }}>
+          <input 
+            type="text"
+            placeholder="Cari judul atau penulis..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{
+              flex: '1 1 250px',
+              padding: '0.75rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px'
+            }}
+          />
+          <select
+            value={filterCategory}
+            onChange={(e) => setFilterCategory(e.target.value)}
+            style={{
+              flex: '0 1 200px',
+              padding: '0.75rem',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              backgroundColor: 'white'
+            }}
+          >
+            <option value="">Semua Kategori</option>
+            {existingCategories.map((cat, idx) => (
+              <option key={idx} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+
         <div className="card">
           {books.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
@@ -410,9 +481,13 @@ export default function AdminPage(){
                 Tambahkan buku pertama menggunakan form di atas.
               </p>
             </div>
+          ) : filteredBooks.length === 0 ? (
+            <div style={{ textAlign: 'center', padding: '2rem', color: '#666' }}>
+              <p>Tidak ada buku yang cocok dengan pencarian.</p>
+            </div>
           ) : (
             <div>
-              {books.map(b => (
+              {filteredBooks.map(b => (
                 <div key={b.id} className="request-row">
                   <div style={{ flex: 1 }}>
                     <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>

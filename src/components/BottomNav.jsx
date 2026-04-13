@@ -50,19 +50,19 @@ export default function BottomNav() {
       <nav className="fixed bottom-0 w-full bg-white border-t border-gray-100 flex justify-around items-center px-2 py-3 text-xs font-medium z-20 shadow-[0_-2px_5px_rgba(0,0,0,0.05)] md:hidden">
         
         {/* Home */}
-        <div onClick={() => navigate('/')} className={`flex flex-col items-center cursor-pointer w-1/5 ${getClass('/')}`}>
+        <div onClick={() => navigate('/')} className={`flex flex-col items-center cursor-pointer ${user ? 'w-1/5' : 'w-1/3'} ${getClass('/')}`}>
           <ICONS.Home className="w-5 h-5 mb-1" />
           <span>Beranda</span>
         </div>
         
         {/* Explore */}
-        <div onClick={() => navigate('/explore')} className={`flex flex-col items-center cursor-pointer w-1/5 ${getClass('/explore')}`}>
+        <div onClick={() => navigate('/explore')} className={`flex flex-col items-center cursor-pointer ${user ? 'w-1/5' : 'w-1/3'} ${getClass('/explore')}`}>
           <ICONS.Explore className="w-5 h-5 mb-1" />
           <span>Jelajah</span>
         </div>
         
         {/* Center Menu - Admin atau Logout */}
-        {user ? (
+        {user && (
           isAdmin ? (
             // Admin Menu Button
             <div onClick={() => setShowAdminMenu(true)} className="flex flex-col items-center cursor-pointer w-1/5 text-gray-400 hover:text-teal-700">
@@ -80,14 +80,6 @@ export default function BottomNav() {
               <span className="text-teal-700 mt-1">Rak Ku</span>
             </div>
           )
-        ) : (
-          // Scan Button untuk tidak login
-          <div onClick={() => navigate('/explore')} className="flex flex-col items-center cursor-pointer w-1/5 text-gray-400 hover:text-teal-700">
-            <div className="bg-teal-600 w-12 h-12 rounded-full flex items-center justify-center text-white shadow-lg shadow-teal-600/40 border-4 border-white hover:bg-teal-700 transition">
-              <ICONS.Scan className="w-5 h-5" />
-            </div>
-            <span className="mt-1">Cari</span>
-          </div>
         )}
 
         {/* Profile atau Login */}
@@ -97,7 +89,7 @@ export default function BottomNav() {
             <span>Profil</span>
           </div>
         ) : (
-          <div onClick={() => navigate('/auth')} className="flex flex-col items-center cursor-pointer w-1/5 text-gray-400 hover:text-teal-700">
+          <div onClick={() => navigate('/auth')} className="flex flex-col items-center cursor-pointer w-1/3 text-gray-400 hover:text-teal-700">
             <ICONS.Profile className="w-5 h-5 mb-1" />
             <span>Masuk</span>
           </div>

@@ -93,7 +93,15 @@ export default function BookCard({book, onBorrow}){
             <div className="book-info">
               <h3 className="book-title">{book.title}</h3>
               <p className="book-author">{book.author}</p>
-              <p className="book-copies">Copies: {book.copies ?? 0}</p>
+              
+              <div className="flex items-center gap-2 mb-2 flex-wrap">
+                <p className="book-copies m-0">Copies: {book.copies ?? 0}</p>
+                {book.category && (
+                  <span className="bg-teal-600 text-white text-[10px] uppercase font-bold px-2 py-0.5 rounded">
+                    {book.category}
+                  </span>
+                )}
+              </div>
               
               {/* Rating Display */}
               {renderRatingStars()}

@@ -65,59 +65,6 @@ export default function UserManagement() {
     }
   }
 
-  async function toggleAdminStatus(userId, currentIsAdmin, userName, userEmail) {
-    const action = currentIsAdmin ? 'mencabut hak admin dari' : 'memberikan hak admin kepada'
-    const displayName = userName || userEmail
-    
-    setPopup({
-      isOpen: true,
-      type: 'confirm',
-      title: 'Konfirmasi Perubahan',
-      message: `Apakah Anda yakin ingin ${action} ${displayName}?`,
-      onConfirm: () => confirmToggleAdmin(userId, currentIsAdmin, displayName)
-    })
-  }
-
-  async function confirmToggleAdmin(userId, currentIsAdmin, displayName) {
-    try {
-      const newStatus = !currentIsAdmin
-      
-      // Update di table profiles
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({ is_admin: newStatus })
-        .eq('id', userId)
-
-      if (profileError) throw profileError
-
-      // Update di auth.users metadata juga
-      try {
-        const { error: authError } = await supabase.auth.admin.updateUserById(
-          userId,
-          {
-            user_metadata: { is_admin: newStatus }
-          }
-        )
-        
-        if (authError) {
-          console.warn('Could not update auth metadata:', authError)
-          // Tidak throw error karena update profiles sudah berhasil
-        }
-      } catch (authErr) {
-        console.warn('Auth metadata update failed:', authErr)
-      }
-
-      showPopup('alert', 'Berhasil', 
-        `Hak admin ${newStatus ? 'diberikan kepada' : 'dicabut dari'} ${displayName}`)
-      
-      await loadUsers()
-    } catch (err) {
-      console.error('Error updating admin status:', err)
-      showPopup('alert', 'Error', 
-        'Gagal mengubah status admin: ' + err.message)
-    }
-  }
-
   async function deleteUser(userId, userName, userEmail) {
     const displayName = userName || userEmail
     
@@ -290,34 +237,13 @@ export default function UserManagement() {
                 </div>
                 
                 <div className="actions">
-                  {u.id !== user?.id ? (
-                    <>
-                      <button 
-                        className={u.is_admin ? 'btn-ghost' : 'btn'}
-                        onClick={() => toggleAdminStatus(
-                          u.id, 
-                          u.is_admin || false,
-                          u.full_name,
-                          u.email
-                        )}
-                        style={{
-                          backgroundColor: u.is_admin ? 'transparent' : '#4CAF50',
-                          borderColor: u.is_admin ? '#f44336' : '#4CAF50',
-                          color: u.is_admin ? '#f44336' : 'white'
-                        }}
-                      >
-                        {u.is_admin ? '❌ Cabut Admin' : '✓ Jadikan Admin'}
-                      </button>
-                    </>
-                  ) : (
-                    <span style={{ 
-                      fontSize: '0.9rem', 
-                      color: '#999',
-                      fontStyle: 'italic'
-                    }}>
-                      (Akun Anda)
-                    </span>
-                  )}
+                  <span style={{ 
+                    fontSize: '0.9rem', 
+                    color: '#999',
+                    fontStyle: 'italic'
+                  }}>
+                    {u.id === user?.id ? '(Akun Anda)' : ''}
+                  </span>
                 </div>
               </div>
             ))}
@@ -335,9 +261,7 @@ export default function UserManagement() {
           color: '#666',
           lineHeight: '1.8'
         }}>
-          <li>Admin dapat mengakses halaman admin dan mengelola buku</li>
-          <li>Admin dapat memberikan atau mencabut hak admin dari user lain</li>
-          <li>Anda tidak dapat mengubah status admin Anda sendiri</li>
+          <li>Admin dapat memantau data pengguna yang terdaftar di aplikasi.</li>
         </ul>
 
       </div>

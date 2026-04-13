@@ -72,7 +72,13 @@ export default function ExplorePage() {
 
   useEffect(() => {
     fetchCategories().then(data => {
-      setCategories(['Semua', ...data.map(c => c.name || c)])
+      const defaultCats = [
+        'Fiksi', 'Sains', 'Sejarah', 'Teknologi', 'Filosofi', 
+        'Biografi', 'Bisnis', 'Pengembangan Diri', 'Misteri', 'Romansa', 'Fantasi', 'Pendidikan'
+      ];
+      const fetchedCats = data.map(c => c.name || c)
+      const uniqueCats = [...new Set([...defaultCats, ...fetchedCats])].sort();
+      setCategories(['Semua', ...uniqueCats])
     }).catch(err => console.error("Failed to load categories:", err))
   }, [])
 
