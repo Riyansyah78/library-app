@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase, fetchUserBorrowRequests } from './supabaseClient'
+import { supabase, getUnreadNotificationCount } from './supabaseClient'
 
 const AuthContext = createContext()
 
@@ -76,28 +76,7 @@ export function AuthProvider({ children }) {
 
   const updateNotificationCount = async (userId) => {
     try {
-      const requests = await fetchUserBorrowRequests(userId)
-      const today = new Date()
-      let count = 0
-
-      requests.forEach(req => {
-        const dueDate = new Date(req.due_date)
-        const diffTime = dueDate - today
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24))
-
-        
-        
-        if (req.status === 'approved') {
-          
-          
-          if (diffDays <= 3) {
-             
-          }
-        } else if (req.status === 'rejected') {
-          count++
-        }
-      })
-      
+      const count = await getUnreadNotificationCount(userId)
       setNotificationCount(count)
     } catch (err) {
       console.error('Error fetching notification count:', err)

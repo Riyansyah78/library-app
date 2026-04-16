@@ -1,16 +1,32 @@
 // File: src/components/Header.jsx
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthProvider'
-import { supabase } from '../supabaseClient'
+import { supabase, getUnreadNotificationCount } from '../supabaseClient'
 import Popup from './Popup'
 
 export default function Header() {
-  
+
   const { user, isAdmin } = useAuth()
   const navigate = useNavigate()
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false)
+  const [unreadCount, setUnreadCount] = useState(0)
+
+  useEffect(() => {
+    if (user) {
+      loadUnreadCount()
+    }
+  }, [user])
+
+  async function loadUnreadCount() {
+    try {
+      const count = await getUnreadNotificationCount(user.id)
+      setUnreadCount(count)
+    } catch (err) {
+      console.error('Error loading unread count:', err)
+    }
+  }
 
   const handleLogout = async () => {
     try {
@@ -82,6 +98,22 @@ export default function Header() {
                 
                 {/* Divider */}
                 <div className="h-6 w-px bg-gray-300 mx-2"></div>
+
+                {/* Notifications Bell */}
+                <Link
+                  to="/notifications"
+                  className="relative flex items-center justify-center w-10 h-10 rounded-full hover:bg-gray-100 transition"
+                  title="Notifikasi"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5 text-gray-600">
+                    <path d="M5.85 3a3 3 0 00-2.115 5.232l1.105.221.897 1.794A3 3 0 006.6 13.05l.3 1.2V17a2.25 2.25 0 002.25 2.25h6.3A2.25 2.25 0 0017.4 17v-2.75l.3-1.2a3 3 0 00.868-2.802l.897-1.794 1.105-.221A3 3 0 0018.15 3h-12.3zM9.9 20.25a4.5 4.5 0 019 0H9.9z" />
+                  </svg>
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold min-w-5 h-5 flex items-center justify-center rounded-full px-1">
+                      {unreadCount > 99 ? '99+' : unreadCount}
+                    </span>
+                  )}
+                </Link>
 
                 {/* Profile & Logout */}
                 <div className="flex items-center gap-4">

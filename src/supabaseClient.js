@@ -159,7 +159,13 @@ export async function getPublicUrlFor(path){
 }
 
 export async function fetchRequests(){
-  const { data, error } = await supabase.from('borrow_requests').select('*').order('borrow_date', {ascending:false})
+  const { data, error } = await supabase
+    .from('borrow_requests')
+    .select(`
+      *,
+      books (id, title, author, cover_url)
+    `)
+    .order('borrow_date', {ascending:false})
   if (error) throw error
   return data
 }
@@ -365,4 +371,120 @@ export async function fetchCategories() {
     // Bersihkan dan jadikan unik
     const uniqueCategories = [...new Set(data.map(item => item.category).filter(c => c))];
     return uniqueCategories;
+}
+
+// ============================================
+// Notification API Functions
+// ============================================
+
+// Fetch all notifications for a user
+export async function fetchUserNotifications(userId) {
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .select('*')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+
+    if (error) throw error
+    return data || []
+  } catch (err) {
+    console.error('fetchUserNotifications error:', err)
+    return []
+  }
+}
+
+// Mark a single notification as read
+export async function markNotificationAsRead(notificationId) {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('id', notificationId)
+
+    if (error) throw error
+    return { success: true }
+  } catch (err) {
+    console.error('markNotificationAsRead error:', err)
+    throw err
+  }
+}
+
+// Mark all notifications as read for a user
+export async function markAllNotificationsAsRead(userId) {
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .update({ is_read: true })
+      .eq('user_id', userId)
+      .eq('is_read', false)
+
+    if (error) throw error
+    return { success: true }
+  } catch (err) {
+    console.error('markAllNotificationsAsRead error:', err)
+    throw err
+  }
+}
+
+// Get unread notification count
+export async function getUnreadNotificationCount(userId) {
+  try {
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact' })
+      .eq('user_id', userId)
+      .eq('is_read', false)
+
+    if (error) return 0
+    return count || 0
+  } catch (err) {
+    return 0
+  }
+}
+
+// Create borrow notification
+export async function createBorrowNotification({ userId, requestId, bookTitle, action, notes }) {
+  let title = ''
+  let message = ''
+  let type = 'success'
+
+  switch (action) {
+    case 'approved':
+      title = 'Peminjaman Disetujui'
+      message = `Permintaan pinjam buku "${bookTitle}" telah disetujui. Silakan ambil buku di perpustakaan.`
+      type = 'success'
+      break
+    case 'rejected':
+      title = 'Peminjaman Ditolak'
+      message = `Maaf, permintaan pinjam buku "${bookTitle}" ditolak.${notes ? ' Alasan: ' + notes : ''}`
+      type = 'error'
+      break
+    case 'returned':
+      title = 'Buku Dikembalikan'
+      message = `Buku "${bookTitle}" telah berhasil dikembalikan.${notes ? ' ' + notes : ''}`
+      type = 'success'
+      break
+    default:
+      return null
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('notifications')
+      .insert([{
+        user_id: userId,
+        title,
+        message,
+        type,
+        related_request_id: requestId
+      }])
+      .select()
+
+    if (error) throw error
+    return data
+  } catch (err) {
+    console.error('Error creating borrow notification:', err)
+    return null
+  }
 }

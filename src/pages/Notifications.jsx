@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../AuthProvider'
-import { fetchUserBorrowRequests } from '../supabaseClient'
+import { fetchUserNotifications, markNotificationAsRead, markAllNotificationsAsRead } from '../supabaseClient'
 
 export default function Notifications() {
   const { user } = useAuth()
@@ -13,81 +13,41 @@ export default function Notifications() {
 
   useEffect(() => {
     if (user) {
-      generateNotifications()
+      loadNotifications()
     } else {
       setLoading(false)
     }
   }, [user])
 
-  async function generateNotifications() {
+  async function loadNotifications() {
     try {
       setLoading(true)
-      // Kita ambil data peminjaman user
-      const requests = await fetchUserBorrowRequests(user.id)
-      
-      const generatedNotifs = []
-      const today = new Date()
-
-      requests.forEach(req => {
-        const bookTitle = req.books?.title || 'Buku'
-        const dueDate = new Date(req.due_date)
-        const diffTime = dueDate - today
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) 
-
-        // 1. Notifikasi Status Disetujui
-        if (req.status === 'approved') {
-          generatedNotifs.push({
-            id: `app-${req.id}`,
-            type: 'success',
-            title: 'Peminjaman Disetujui',
-            message: `Permintaan pinjam "${bookTitle}" telah disetujui. Silakan ambil buku di perpustakaan.`,
-            date: req.borrow_date // Menggunakan tanggal pinjam sebagai timestamp
-          })
-
-          // 2. Notifikasi Jatuh Tempo (Warning)
-          // Jika buku belum dikembalikan, status approved, dan sisa hari < 3
-          if (diffDays <= 3 && diffDays >= 0) {
-            generatedNotifs.push({
-              id: `due-${req.id}`,
-              type: 'warning',
-              title: 'Segera Jatuh Tempo',
-              message: `Buku "${bookTitle}" harus dikembalikan dalam ${diffDays === 0 ? 'hari ini' : diffDays + ' hari lagi'}.`,
-              date: new Date().toISOString() // Notifikasi baru hari ini
-            })
-          }
-
-          // 3. Notifikasi Terlambat (Danger)
-          if (diffDays < 0) {
-            generatedNotifs.push({
-              id: `late-${req.id}`,
-              type: 'error',
-              title: 'Terlambat Pengembalian',
-              message: `Anda terlambat ${Math.abs(diffDays)} hari mengembalikan buku "${bookTitle}". Harap segera kembalikan.`,
-              date: new Date().toISOString()
-            })
-          }
-        }
-
-        // 4. Notifikasi Ditolak
-        if (req.status === 'rejected') {
-          generatedNotifs.push({
-            id: `rej-${req.id}`,
-            type: 'error',
-            title: 'Permintaan Ditolak',
-            message: `Maaf, permintaan pinjam "${bookTitle}" ditolak oleh admin.`,
-            date: req.created_at // Menggunakan tanggal request
-          })
-        }
-      })
-
-      // Urutkan notifikasi dari yang terbaru
-      generatedNotifs.sort((a, b) => new Date(b.date) - new Date(a.date))
-      
-      setNotifications(generatedNotifs)
+      const data = await fetchUserNotifications(user.id)
+      setNotifications(data)
     } catch (error) {
-      console.error('Error generating notifications:', error)
+      console.error('Error loading notifications:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleMarkAsRead = async (notificationId) => {
+    try {
+      await markNotificationAsRead(notificationId)
+      setNotifications(prev =>
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
+      )
+    } catch (error) {
+      console.error('Error marking notification as read:', error)
+    }
+  }
+
+  const handleMarkAllAsRead = async () => {
+    try {
+      await markAllNotificationsAsRead(user.id)
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })))
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error)
     }
   }
 
@@ -105,6 +65,8 @@ export default function Notifications() {
     }
   }
 
+  const unreadCount = notifications.filter(n => !n.is_read).length
+
   return (
     <div className="bg-white min-h-screen pb-20">
       {/* Header Notifikasi */}
@@ -114,7 +76,22 @@ export default function Notifications() {
             <path fillRule="evenodd" d="M11.03 3.97a.75.75 0 010 1.06l-6.22 6.22H21a.75.75 0 010 1.5H4.81l6.22 6.22a.75.75 0 11-1.06 1.06l-7.5-7.5a.75.75 0 010-1.06l7.5-7.5a.75.75 0 011.06 0z" clipRule="evenodd" />
           </svg>
         </button>
-        <h1 className="text-xl font-bold text-gray-900">Notifikasi</h1>
+        <div className="flex-1 flex items-center gap-3">
+          <h1 className="text-xl font-bold text-gray-900">Notifikasi</h1>
+          {unreadCount > 0 && (
+            <span className="bg-red-500 text-white text-xs font-bold px-2 py-0.5 rounded-full">
+              {unreadCount}
+            </span>
+          )}
+        </div>
+        {unreadCount > 0 && (
+          <button
+            onClick={handleMarkAllAsRead}
+            className="text-xs text-teal-600 hover:text-teal-800 font-medium"
+          >
+            Tandai semua dibaca
+          </button>
+        )}
       </div>
 
       {/* Content */}
@@ -137,11 +114,13 @@ export default function Notifications() {
         ) : (
           <div className="space-y-4">
             {notifications.map((notif) => (
-              <div 
-                key={notif.id} 
-                className={`p-4 rounded-xl border flex gap-4 transition hover:shadow-sm ${
-                    notif.type === 'error' ? 'bg-red-50 border-red-100' : 
-                    notif.type === 'warning' ? 'bg-yellow-50 border-yellow-100' : 
+              <div
+                key={notif.id}
+                onClick={() => !notif.is_read && handleMarkAsRead(notif.id)}
+                className={`p-4 rounded-xl border flex gap-4 transition hover:shadow-sm cursor-pointer ${
+                    notif.type === 'error' ? 'bg-red-50 border-red-100' :
+                    notif.type === 'warning' ? 'bg-yellow-50 border-yellow-100' :
+                    notif.is_read ? 'bg-gray-50 border-gray-100 opacity-75' :
                     'bg-white border-gray-100 shadow-sm'
                 }`}
               >
@@ -152,12 +131,17 @@ export default function Notifications() {
                   <div className="flex justify-between items-start mb-1">
                     <h4 className="font-bold text-gray-900 text-sm">{notif.title}</h4>
                     <span className="text-xs text-gray-400 whitespace-nowrap ml-2">
-                        {new Date(notif.date).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' })}
+                        {new Date(notif.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
                     </span>
                   </div>
                   <p className="text-sm text-gray-600 leading-relaxed">
                     {notif.message}
                   </p>
+                  {!notif.is_read && (
+                    <span className="inline-block mt-2 text-xs text-teal-600 font-medium">
+                      Klik untuk tandai dibaca
+                    </span>
+                  )}
                 </div>
               </div>
             ))}
