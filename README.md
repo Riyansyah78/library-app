@@ -15,7 +15,7 @@ PustakaConnect adalah aplikasi web modern untuk manajemen perpustakaan digital y
 - 📝 **Peminjaman** - Request peminjaman buku dengan durasi 7 hari
 - 📚 **Rak Saya** - Kelola buku yang sedang dipinjam dan riwayat peminjaman
 - ⭐ **Rating & Review** - Beri rating dan ulasan untuk buku yang sudah dibaca
-- 🔔 **Notifikasi** - Notifikasi status peminjaman dan reminder jatuh tempo
+- 🔔 **Notifikasi & Email** - Notifikasi In-App & Email reminder otomatis via Resend & Supabase Edge Functions
 - 📱 **Mobile Friendly** - Responsive design untuk semua device
 
 ### 🛠️ Admin Features
@@ -36,8 +36,9 @@ PustakaConnect adalah aplikasi web modern untuk manajemen perpustakaan digital y
 
 ### Backend & Database
 - **Supabase** - Backend as a Service (Auth, Database, Storage)
-- **PostgreSQL** - Database engine
-- **Supabase Edge Functions** - Serverless functions
+- **PostgreSQL** - Database engine (didukung ekstensi `pg_cron`)
+- **Supabase Edge Functions** - Serverless functions & scheduler
+- **Resend** - API Pengiriman Email
 
 ### Tools
 - **Vite** - Build tool
@@ -75,92 +76,33 @@ Dapatkan nilai dari Supabase Dashboard:
 - Settings > API > Project URL → `VITE_SUPABASE_URL`
 - Settings > API > Project API keys → anon key → `VITE_SUPABASE_ANON_KEY`
 
+Setup API Key rahasia untuk Edge Functions (Email via Resend):
+```bash
+npx supabase login
+npx supabase secrets set RESEND_API_KEY=your_resend_api_key
+```
+
 ### 4. Setup Database (Supabase)
 
-#### a. Buat Tabel-Tabel
-Jalankan SQL queries di Supabase SQL Editor:
+Jalankan seluruh query yang ada pada file `database_setup.sql` di **Supabase SQL Editor**. 
 
-```sql
--- Tabel Books
-CREATE TABLE books (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  title VARCHAR(255) NOT NULL,
-  author VARCHAR(255) NOT NULL,
-  category VARCHAR(100),
-  cover_url TEXT,
-  copies INTEGER DEFAULT 1,
-  hot_month INTEGER,
-  synopsis TEXT,
-  average_rating DECIMAL(2,1) DEFAULT 0,
-  rating_count INTEGER DEFAULT 0,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+Script tersebut akan secara otomatis melakukan:
+1. Pembuatan seluruh tabel: `books`, `profiles`, `borrow_requests`, `notifications`.
+2. Pembuatan Function dan Trigger untuk rating buku otomatis dan generate denda (`fine`).
+3. Konfigurasi **RLS (Row Level Security)**.
+4. Pembuatan Storage Bucket `covers`.
+5. Jadwal `pg_cron` (scheduler otomatis) setiap jam 9 pagi untuk cek buku overdue.
 
--- Tabel Borrow Requests
-CREATE TABLE borrow_requests (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  book_id UUID REFERENCES books(id) ON DELETE CASCADE,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE,
-  user_name VARCHAR(255),
-  status VARCHAR(50) DEFAULT 'requested',
-  borrow_date TIMESTAMP DEFAULT NOW(),
-  due_date TIMESTAMP,
-  return_date TIMESTAMP,
-  notes TEXT,
-  fine INTEGER DEFAULT 0,
-  rating INTEGER DEFAULT 0,
-  rating_comment TEXT,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+*(Catatan: Anda dapat membuat Storage bucket `covers` juga secara manual ke Supabase Storage, set menjadi public).*
 
--- Tabel Profiles
-CREATE TABLE profiles (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
-  full_name VARCHAR(255),
-  avatar_url TEXT,
-  is_admin BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP DEFAULT NOW()
-);
+### 5. Deploy edge Functions (Penting untuk Email Reminders)
+
+Deploy Supabase Edge Functions agar API pengiriman email dapat bekerja:
+```bash
+npx supabase functions deploy send-daily-reminders
 ```
 
-#### b. Setup Rating Function & Trigger
-```sql
-CREATE OR REPLACE FUNCTION update_book_ratings()
-RETURNS TRIGGER AS $$
-BEGIN
-  UPDATE books
-  SET 
-    average_rating = COALESCE((
-      SELECT ROUND(AVG(rating)::numeric, 1)
-      FROM borrow_requests
-      WHERE book_id = NEW.book_id AND rating > 0 AND status = 'returned'
-    ), 0),
-    rating_count = COALESCE((
-      SELECT COUNT(*)
-      FROM borrow_requests
-      WHERE book_id = NEW.book_id AND rating > 0 AND status = 'returned'
-    ), 0)
-  WHERE id = NEW.book_id;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER trigger_update_book_ratings
-AFTER INSERT OR UPDATE ON borrow_requests
-FOR EACH ROW
-WHEN (NEW.rating > 0)
-EXECUTE FUNCTION update_book_ratings();
-```
-
-#### c. Setup Storage Bucket (untuk cover image)
-- Supabase Dashboard > Storage > New Bucket
-- Name: `covers`
-- Make it public
-
-#### d. Setup RLS (Row Level Security) - Optional
-Gunakan policies untuk keamanan data
-
-### 5. Run Development Server
+### 6. Run Development Server
 ```bash
 npm run dev
 ```
@@ -318,6 +260,17 @@ VITE_SUPABASE_ANON_KEY = your_supabase_anon_key
 | rating | INTEGER | Rating (1-5) |
 | rating_comment | TEXT | Ulasan |
 
+### notifications
+| Column | Type | Notes |
+|--------|------|-------|
+| id | UUID | Primary key |
+| user_id | UUID | Foreign key to auth.users |
+| title | VARCHAR | Judul pemberitahuan |
+| message | TEXT | Isi notifikasi lengkap |
+| type | VARCHAR | info/warning/success/error |
+| is_read | BOOLEAN | Status baca |
+| related_request_id | UUID | Ref to borrow_requests |
+
 ## 🐛 Troubleshooting
 
 ### Error: "column does not exist"
@@ -368,7 +321,7 @@ Ada pertanyaan atau issue?
 
 - [ ] Mobile app (React Native)
 - [ ] Payment integration
-- [ ] Email notifications
+- [x] Email notifications (Terintegrasi dengan Resend & Edge Functions)
 - [ ] Advanced search filters
 - [ ] Wishlist feature
 - [ ] Social sharing
