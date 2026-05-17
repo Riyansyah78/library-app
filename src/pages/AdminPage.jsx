@@ -366,9 +366,11 @@ export default function AdminPage(){
             fontSize: '1rem',
             fontWeight: activeTab === 'books' ? '600' : '400',
             color: activeTab === 'books' ? '#0d9488' : '#64748b',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
             borderBottom: activeTab === 'books' ? '3px solid #0d9488' : '3px solid transparent',
             background: 'none',
-            border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s'
           }}
@@ -382,9 +384,11 @@ export default function AdminPage(){
             fontSize: '1rem',
             fontWeight: activeTab === 'requests' ? '600' : '400',
             color: activeTab === 'requests' ? '#0d9488' : '#64748b',
+            borderTop: 'none',
+            borderLeft: 'none',
+            borderRight: 'none',
             borderBottom: activeTab === 'requests' ? '3px solid #0d9488' : '3px solid transparent',
             background: 'none',
-            border: 'none',
             cursor: 'pointer',
             transition: 'all 0.2s',
             position: 'relative'

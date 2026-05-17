@@ -63,6 +63,7 @@ function App() {
             {/* Route TANPA Layout (Misal: Login Page) */}
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/auth/confirmed" element={<EmailConfirmed />} />
+            <Route path="/confirmed" element={<EmailConfirmed />} />
 
             {/* Route DENGAN Layout (Header & Bottom Nav) */}
             <Route element={<Layout />}>
